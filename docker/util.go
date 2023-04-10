@@ -23,8 +23,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/zawachte/capd-mirror/docker/types"
 	"sigs.k8s.io/cluster-api/test/infrastructure/container"
-	"sigs.k8s.io/cluster-api/test/infrastructure/docker/internal/docker/types"
 )
 
 const (

@@ -36,14 +36,14 @@ import (
 	"sigs.k8s.io/kind/pkg/apis/config/v1alpha4"
 	"sigs.k8s.io/kind/pkg/cluster/constants"
 
+	"github.com/zawachte/capd-mirror/docker/types"
+	"github.com/zawachte/capd-mirror/provisioning"
+	"github.com/zawachte/capd-mirror/provisioning/cloudinit"
+	"github.com/zawachte/capd-mirror/provisioning/ignition"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/infrastructure/container"
 	infrav1 "sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
-	"sigs.k8s.io/cluster-api/test/infrastructure/docker/internal/docker/types"
-	"sigs.k8s.io/cluster-api/test/infrastructure/docker/internal/provisioning"
-	"sigs.k8s.io/cluster-api/test/infrastructure/docker/internal/provisioning/cloudinit"
-	"sigs.k8s.io/cluster-api/test/infrastructure/docker/internal/provisioning/ignition"
 	clusterapicontainer "sigs.k8s.io/cluster-api/util/container"
 	"sigs.k8s.io/cluster-api/util/patch"
 )

@@ -26,9 +26,9 @@ import (
 	"sigs.k8s.io/kind/pkg/apis/config/v1alpha4"
 	"sigs.k8s.io/kind/pkg/cluster/constants"
 
+	"github.com/zawachte/capd-mirror/docker/types"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/infrastructure/container"
-	"sigs.k8s.io/cluster-api/test/infrastructure/docker/internal/docker/types"
 )
 
 // KubeadmContainerPort is the port that kubeadm listens on in the container.

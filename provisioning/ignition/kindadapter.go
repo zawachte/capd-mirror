@@ -29,7 +29,7 @@ import (
 	"github.com/vincent-petithory/dataurl"
 	"sigs.k8s.io/yaml"
 
-	"sigs.k8s.io/cluster-api/test/infrastructure/docker/internal/provisioning"
+	"github.com/zawachte/capd-mirror/provisioning"
 )
 
 // RawIgnitionToProvisioningCommands converts an Ignition YAML document to a slice of commands.

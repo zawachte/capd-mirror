@@ -23,7 +23,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"sigs.k8s.io/cluster-api/test/infrastructure/docker/internal/provisioning"
+	"github.com/zawachte/capd-mirror/provisioning"
 )
 
 func TestWriteFiles(t *testing.T) {

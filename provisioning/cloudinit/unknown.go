@@ -21,7 +21,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"sigs.k8s.io/cluster-api/test/infrastructure/docker/internal/provisioning"
+	"github.com/zawachte/capd-mirror/provisioning"
 )
 
 type unknown struct {

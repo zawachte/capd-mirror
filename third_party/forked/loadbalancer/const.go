@@ -14,32 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cloudinit
+package loadbalancer
 
-import (
-	"testing"
+// Image defines the loadbalancer image name
+const Image = "haproxy"
 
-	. "github.com/onsi/gomega"
-)
+// DefaultImageRepository defines the loadbalancer image repository
+const DefaultImageRepository = "kindest"
 
-func TestUnknown_Run(t *testing.T) {
-	g := NewWithT(t)
+// DefaultImageTag defines the loadbalancer image tag
+const DefaultImageTag = "v20210715-a6da3463"
 
-	u := &unknown{
-		lines: []string{},
-	}
-	lines, err := u.Commands()
-	g.Expect(err).NotTo(HaveOccurred())
-	g.Expect(lines).To(HaveLen(0))
-}
-
-func TestUnknown_Unmarshal(t *testing.T) {
-	g := NewWithT(t)
-
-	u := &unknown{}
-	expected := []string{"test 1", "test 2", "test 3"}
-	input := `["test 1", "test 2", "test 3"]`
-
-	g.Expect(u.Unmarshal([]byte(input))).To(Succeed())
-	g.Expect(u.lines).To(Equal(expected))
-}
+// ConfigPath defines the path to the config file in the image
+const ConfigPath = "/usr/local/etc/haproxy/haproxy.cfg"

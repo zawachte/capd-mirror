@@ -106,7 +106,7 @@ func (m *Manager) CreateWorkerNode(ctx context.Context, name, image, clusterName
 }
 
 // CreateExternalLoadBalancerNode will create a new container to act as the load balancer for external access.
-func (m *Manager) CreateExternalLoadBalancerNode(ctx context.Context, name, image, clusterName, listenAddress string, port int32, _ clusterv1.ClusterIPFamily) (*types.Node, error) {
+func (m *Manager) CreateExternalLoadBalancerNode(ctx context.Context, name, image, clusterName, listenAddress string, port int32, ipFamily clusterv1.ClusterIPFamily) (*types.Node, error) {
 	// gets a random host port for control-plane load balancer
 	// gets a random host port for the API server
 	if port == 0 {
@@ -170,12 +170,6 @@ func createNode(ctx context.Context, opts *nodeCreateOpts) (*types.Node, error) 
 		},
 		IPFamily: opts.IPFamily,
 	}
-	if opts.Role == constants.ControlPlaneNodeRoleValue {
-		runOptions.EnvironmentVars = map[string]string{
-			"KUBECONFIG": "/etc/kubernetes/admin.conf",
-		}
-	}
-
 	log.V(6).Info("Container run options: %+v", runOptions)
 
 	containerRuntime, err := container.RuntimeFrom(ctx)

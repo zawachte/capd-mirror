@@ -22,9 +22,7 @@ import (
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -75,8 +73,7 @@ func (r *DockerClusterReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, nil
 	}
 
-	log = log.WithValues("Cluster", klog.KObj(cluster))
-	ctx = ctrl.LoggerInto(ctx, log)
+	log = log.WithValues("cluster", cluster.Name)
 
 	// Create a helper for managing a docker container hosting the loadbalancer.
 	externalLoadBalancer, err := docker.NewLoadBalancer(ctx, cluster, dockerCluster)
@@ -154,10 +151,9 @@ func (r *DockerClusterReconciler) reconcileNormal(ctx context.Context, dockerClu
 		return ctrl.Result{}, errors.Wrap(err, "failed to get ip for the load balancer")
 	}
 
-	if dockerCluster.Spec.ControlPlaneEndpoint.Host == "" {
-		// Surface the control plane endpoint
-		// Note: the control plane port is already set by the user or defaulted by the dockerCluster webhook.
-		dockerCluster.Spec.ControlPlaneEndpoint.Host = lbIP
+	dockerCluster.Spec.ControlPlaneEndpoint = infrav1.APIEndpoint{
+		Host: lbIP,
+		Port: 6443,
 	}
 
 	// Mark the dockerCluster ready
@@ -194,19 +190,17 @@ func (r *DockerClusterReconciler) reconcileDelete(ctx context.Context, dockerClu
 
 // SetupWithManager will add watches for this controller.
 func (r *DockerClusterReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, options controller.Options) error {
-	err := ctrl.NewControllerManagedBy(mgr).
+	c, err := ctrl.NewControllerManagedBy(mgr).
 		For(&infrav1.DockerCluster{}).
 		WithOptions(options).
 		WithEventFilter(predicates.ResourceNotPaused(ctrl.LoggerFrom(ctx))).
-		Watches(
-			&source.Kind{Type: &clusterv1.Cluster{}},
-			handler.EnqueueRequestsFromMapFunc(util.ClusterToInfrastructureMapFunc(ctx, infrav1.GroupVersion.WithKind("DockerCluster"), mgr.GetClient(), &infrav1.DockerCluster{})),
-			builder.WithPredicates(
-				predicates.ClusterUnpaused(ctrl.LoggerFrom(ctx)),
-			),
-		).Complete(r)
+		Build(r)
 	if err != nil {
-		return errors.Wrap(err, "failed setting up with a controller manager")
+		return err
 	}
-	return nil
+	return c.Watch(
+		&source.Kind{Type: &clusterv1.Cluster{}},
+		handler.EnqueueRequestsFromMapFunc(util.ClusterToInfrastructureMapFunc(ctx, infrav1.GroupVersion.WithKind("DockerCluster"), mgr.GetClient(), &infrav1.DockerCluster{})),
+		predicates.ClusterUnpaused(ctrl.LoggerFrom(ctx)),
+	)
 }

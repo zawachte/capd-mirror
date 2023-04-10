@@ -28,11 +28,8 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-	apimachinerytypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kind/pkg/apis/config/v1alpha4"
 	"sigs.k8s.io/kind/pkg/cluster/constants"
 
@@ -45,7 +42,6 @@ import (
 	"sigs.k8s.io/cluster-api/test/infrastructure/container"
 	infrav1 "sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
 	clusterapicontainer "sigs.k8s.io/cluster-api/util/container"
-	"sigs.k8s.io/cluster-api/util/patch"
 )
 
 const (
@@ -297,19 +293,19 @@ func (m *Machine) PreloadLoadImages(ctx context.Context, images []string) error 
 
 		err = containerRuntime.SaveContainerImage(ctx, image, imageTarPath)
 		if err != nil {
-			return errors.Wrapf(err, "failed to save image %q to %q", image, imageTarPath)
+			return errors.Wrap(err, "failed to save image")
 		}
 
 		f, err := os.Open(imageTarPath)
 		if err != nil {
-			return errors.Wrapf(err, "failed to open image %q from %q", image, imageTarPath)
+			return errors.Wrap(err, "failed to open image")
 		}
 		defer f.Close() //nolint:gocritic // No resource leak.
 
 		ps := m.container.Commander.Command("ctr", "--namespace=k8s.io", "images", "import", "-")
 		ps.SetStdin(f)
 		if err := ps.Run(ctx); err != nil {
-			return errors.Wrapf(err, "failed to load image %q", image)
+			return errors.Wrap(err, "failed to load image")
 		}
 	}
 	return nil
@@ -355,7 +351,7 @@ func (m *Machine) ExecBootstrap(ctx context.Context, data string, format bootstr
 		}
 		err := cmd.Run(ctx)
 		if err != nil {
-			log.Info("Failed running command", "instance", m.Name(), "command", command, "stdout", outStd.String(), "stderr", outErr.String(), "bootstrap data", data)
+			log.Info("Failed running command", "command", command, "stdout", outStd.String(), "stderr", outErr.String(), "bootstrap data", data)
 			logContainerDebugInfo(ctx, log, m.ContainerName())
 			return errors.Wrapf(err, "failed to run cloud config: stdout: %s stderr: %s", outStd.String(), outErr.String())
 		}
@@ -365,7 +361,7 @@ func (m *Machine) ExecBootstrap(ctx context.Context, data string, format bootstr
 }
 
 // CheckForBootstrapSuccess checks if bootstrap was successful by checking for existence of the sentinel file.
-func (m *Machine) CheckForBootstrapSuccess(ctx context.Context, logResult bool) error {
+func (m *Machine) CheckForBootstrapSuccess(ctx context.Context) error {
 	log := ctrl.LoggerFrom(ctx)
 
 	if m.container == nil {
@@ -378,16 +374,14 @@ func (m *Machine) CheckForBootstrapSuccess(ctx context.Context, logResult bool) 
 	cmd.SetStderr(&outErr)
 	cmd.SetStdout(&outStd)
 	if err := cmd.Run(ctx); err != nil {
-		if logResult {
-			log.Info("Failed running command", "command", "test -f /run/cluster-api/bootstrap-success.complete", "stdout", outStd.String(), "stderr", outErr.String())
-		}
+		log.Info("Failed running command", "command", "test -f /run/cluster-api/bootstrap-success.complete", "stdout", outStd.String(), "stderr", outErr.String())
 		return errors.Wrap(err, "failed to run bootstrap check")
 	}
 	return nil
 }
 
 // SetNodeProviderID sets the docker provider ID for the kubernetes node.
-func (m *Machine) SetNodeProviderID(ctx context.Context, c client.Client) error {
+func (m *Machine) SetNodeProviderID(ctx context.Context) error {
 	log := ctrl.LoggerFrom(ctx)
 
 	kubectlNode, err := m.getKubectlNode(ctx)
@@ -398,21 +392,20 @@ func (m *Machine) SetNodeProviderID(ctx context.Context, c client.Client) error 
 		return errors.Wrapf(ContainerNotRunningError{Name: kubectlNode.Name}, "unable to set NodeProviderID")
 	}
 
-	node := &corev1.Node{}
-	if err = c.Get(ctx, apimachinerytypes.NamespacedName{Name: m.ContainerName()}, node); err != nil {
-		return errors.Wrap(err, "failed to retrieve node")
-	}
-
 	log.Info("Setting Kubernetes node providerID")
-
-	patchHelper, err := patch.NewHelper(node, c)
+	patch := fmt.Sprintf(`{"spec": {"providerID": %q}}`, m.ProviderID())
+	cmd := kubectlNode.Commander.Command(
+		"kubectl",
+		"--kubeconfig", "/etc/kubernetes/kubelet.conf",
+		"patch",
+		"node", m.ContainerName(),
+		"--patch", patch,
+	)
+	lines, err := cmd.RunLoggingOutputOnFail(ctx)
 	if err != nil {
-		return err
-	}
-
-	node.Spec.ProviderID = m.ProviderID()
-
-	if err = patchHelper.Patch(ctx, node); err != nil {
+		for _, line := range lines {
+			log.Info(line)
+		}
 		return errors.Wrap(err, "failed update providerID")
 	}
 

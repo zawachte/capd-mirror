@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/kind/pkg/cluster/constants"
 
 	"github.com/zawachte/capd-mirror/docker/types"
-	"github.com/zawachte/capd-mirror/loadbalancer"
+	"github.com/zawachte/capd-mirror/third_party/forked/loadbalancer"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/test/infrastructure/container"
 	infrav1 "sigs.k8s.io/cluster-api/test/infrastructure/docker/api/v1beta1"
@@ -38,12 +38,11 @@ type lbCreator interface {
 
 // LoadBalancer manages the load balancer for a specific docker cluster.
 type LoadBalancer struct {
-	name             string
-	image            string
-	container        *types.Node
-	ipFamily         clusterv1.ClusterIPFamily
-	lbCreator        lbCreator
-	controlPlanePort int
+	name      string
+	image     string
+	container *types.Node
+	ipFamily  clusterv1.ClusterIPFamily
+	lbCreator lbCreator
 }
 
 // NewLoadBalancer returns a new helper for managing a docker loadbalancer with a given name.
@@ -72,12 +71,11 @@ func NewLoadBalancer(ctx context.Context, cluster *clusterv1.Cluster, dockerClus
 	image := getLoadBalancerImage(dockerCluster)
 
 	return &LoadBalancer{
-		name:             cluster.Name,
-		image:            image,
-		container:        container,
-		ipFamily:         ipFamily,
-		lbCreator:        &Manager{},
-		controlPlanePort: dockerCluster.Spec.ControlPlaneEndpoint.Port,
+		name:      cluster.Name,
+		image:     image,
+		container: container,
+		ipFamily:  ipFamily,
+		lbCreator: &Manager{},
 	}, nil
 }
 
@@ -109,7 +107,7 @@ func (s *LoadBalancer) containerName() string {
 // Create creates a docker container hosting a load balancer for the cluster.
 func (s *LoadBalancer) Create(ctx context.Context) error {
 	log := ctrl.LoggerFrom(ctx)
-	log = log.WithValues("ipFamily", s.ipFamily, "loadbalancer", s.name)
+	log = log.WithValues("cluster", s.name, "ipFamily", s.ipFamily)
 
 	listenAddr := "0.0.0.0"
 	if s.ipFamily == clusterv1.IPv6IPFamily {
@@ -168,7 +166,7 @@ func (s *LoadBalancer) UpdateConfiguration(ctx context.Context) error {
 	}
 
 	loadBalancerConfig, err := loadbalancer.Config(&loadbalancer.ConfigData{
-		ControlPlanePort: s.controlPlanePort,
+		ControlPlanePort: 6443,
 		BackendServers:   backendServers,
 		IPv6:             s.ipFamily == clusterv1.IPv6IPFamily,
 	})

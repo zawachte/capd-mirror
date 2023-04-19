@@ -32,7 +32,9 @@ import (
 )
 
 const (
-	kubeadmInitPath          = "/run/kubeadm/kubeadm.yaml"
+	kubeadmInitPath     = "/run/kubeadm/kubeadm.yaml"
+	kubeadmTempInitPath = "/tmp/kubeadm.yaml"
+
 	kubeproxyComponentConfig = `
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
@@ -80,8 +82,11 @@ func (a *writeFilesAction) Commands() ([]provisioning.Cmd, error) {
 		owner := fixOwner(f.Owner)
 		permissions := fixPermissions(f.Permissions)
 		content, err := fixContent(f.Content, encodings)
-		if path == kubeadmInitPath {
+		if path == kubeadmInitPath || path == kubeadmTempInitPath {
 			content += kubeproxyComponentConfig
+			content = strings.Replace(content, "        ignorePreflightErrors:\n", "", 1)
+			content = strings.Replace(content, "        - ImagePull\n", "", 1)
+			content = strings.Replace(string(content), "container-log-max-size: 50Mi\n        taints:\n", "container-log-max-size: 50Mi\n          eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%\n        taints:\n", 1)
 		}
 		if err != nil {
 			return commands, errors.Wrapf(err, "error decoding content for %s", path)

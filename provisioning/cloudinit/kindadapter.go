@@ -95,6 +95,9 @@ func getActions(userData []byte) ([]action, error) {
 		// if the line is key/top level action
 		if actionRegEx.MatchString(line) {
 			// converts the file fragment scanned up to now into the current action, if any
+			if line == "packages:" {
+				continue
+			}
 			if act != nil {
 				actionBlock := strings.Join(lines, "\n")
 				if err := act.Unmarshal([]byte(actionBlock)); err != nil {

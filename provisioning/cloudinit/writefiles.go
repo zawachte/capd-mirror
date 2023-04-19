@@ -83,6 +83,7 @@ func (a *writeFilesAction) Commands() ([]provisioning.Cmd, error) {
 		permissions := fixPermissions(f.Permissions)
 		content, err := fixContent(f.Content, encodings)
 		if path == kubeadmInitPath || path == kubeadmTempInitPath {
+			fmt.Println(content)
 			content = strings.Replace(content, "        ignorePreflightErrors:\n", "", 1)
 			content = strings.Replace(content, "        - ImagePull\n", "", 1)
 			content = strings.Replace(content, "container-log-max-size: 50Mi\n        taints:\n", "container-log-max-size: 50Mi\n          eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%\n        taints:\n", 1)

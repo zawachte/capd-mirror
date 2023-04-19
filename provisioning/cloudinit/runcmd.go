@@ -71,5 +71,13 @@ func hackKubeadmIgnoreErrors(c provisioning.Cmd) provisioning.Cmd {
 		}
 	}
 
+	newArgs := []string{}
+	if c.Cmd == "bash" && len(c.Args) >= 1 {
+		if c.Args[0] == "-c" {
+			newArgs = append(newArgs, c.Args[1:]...)
+		}
+		c.Args = newArgs
+	}
+
 	return c
 }

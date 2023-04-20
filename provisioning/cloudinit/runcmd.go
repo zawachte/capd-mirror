@@ -17,7 +17,6 @@ limitations under the License.
 package cloudinit
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -61,9 +60,8 @@ func hackKubeadmIgnoreErrors(c provisioning.Cmd) provisioning.Cmd {
 			c.Args[1] = strings.Replace(c.Args[1], "kubeadm init", "kubeadm init --ignore-preflight-errors=all", 1)
 			c.Args[1] = strings.Replace(c.Args[1], "kubeadm join", "kubeadm join --ignore-preflight-errors=all", 1)
 
-			fmt.Println(c.Args)
-			if strings.Contains(c.Args[1], "bash") {
-				c.Args = []string{"/tmp/kubeadm-postinstall.sh"}
+			if strings.Contains(c.Args[1], "bash -c") {
+				c.Args[1] = strings.Replace(c.Args[1], "-c", "", 1)
 			}
 		}
 	}

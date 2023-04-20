@@ -60,6 +60,11 @@ func hackKubeadmIgnoreErrors(c provisioning.Cmd) provisioning.Cmd {
 		if c.Args[0] == "-c" {
 			c.Args[1] = strings.Replace(c.Args[1], "kubeadm init", "kubeadm init --ignore-preflight-errors=all", 1)
 			c.Args[1] = strings.Replace(c.Args[1], "kubeadm join", "kubeadm join --ignore-preflight-errors=all", 1)
+
+			fmt.Println(c.Args)
+			if strings.Contains(c.Args[1], "bash") {
+				c.Args = []string{"/tmp/kubeadm-postinstall.sh"}
+			}
 		}
 	}
 
@@ -70,15 +75,6 @@ func hackKubeadmIgnoreErrors(c provisioning.Cmd) provisioning.Cmd {
 			copy(c.Args[2:], c.Args[1:])                // shift elements
 			c.Args[1] = "--ignore-preflight-errors=all" // insert the additional arg
 		}
-	}
-
-	fmt.Println("CMD: ", c)
-	newArgs := []string{}
-	if c.Cmd == "bash" && len(c.Args) >= 1 {
-		if c.Args[0] == "-c" {
-			newArgs = append(newArgs, c.Args[1:]...)
-		}
-		c.Args = newArgs
 	}
 
 	return c

@@ -86,7 +86,6 @@ func (a *writeFilesAction) Commands() ([]provisioning.Cmd, error) {
 			content = strings.Replace(content, "  ignorePreflightErrors:\n", "", 1)
 			content = strings.Replace(content, "  - ImagePull\n", "", 1)
 			content = strings.Replace(content, "container-log-max-size: 50Mi\n  taints:\n", "container-log-max-size: 50Mi\n    eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%\n  taints:\n", 1)
-			fmt.Println(content)
 			content += kubeproxyComponentConfig
 		}
 		if err != nil {

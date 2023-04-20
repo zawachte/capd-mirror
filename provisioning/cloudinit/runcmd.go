@@ -17,6 +17,7 @@ limitations under the License.
 package cloudinit
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -71,6 +72,7 @@ func hackKubeadmIgnoreErrors(c provisioning.Cmd) provisioning.Cmd {
 		}
 	}
 
+	fmt.Println("CMD: ", c)
 	newArgs := []string{}
 	if c.Cmd == "bash" && len(c.Args) >= 1 {
 		if c.Args[0] == "-c" {
